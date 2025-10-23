@@ -7,7 +7,7 @@ import id.ac.stis.ppk.donorstisservice.payload.request.SignupRequest;
 import id.ac.stis.ppk.donorstisservice.payload.response.JwtResponse;
 import id.ac.stis.ppk.donorstisservice.payload.response.MessageResponse;
 import id.ac.stis.ppk.donorstisservice.repository.UserRepository;
-import id.ac.stis.ppk.donorstisservice.security.jwt.JwtUtils;
+import id.ac.stis.ppk.donorstisservice.security.jwt.JwtUtils; // <<== IMPORT YANG HILANG
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -87,14 +87,6 @@ public class AuthController {
 
         // Default Role: Set ROLE_USER untuk semua yang mendaftar
         user.setRole(Role.ROLE_USER);
-
-        // Khusus untuk kemudahan testing, Anda bisa menambahkan logika inisiasi Admin KSR di awal:
-        // if (signUpRequest.getUsername().equals("admin.ksr")) {
-        //     user.setRole(Role.ROLE_ADMIN_KSR);
-        // } else {
-        //     user.setRole(Role.ROLE_USER);
-        // }
-
 
         userRepository.save(user);
 

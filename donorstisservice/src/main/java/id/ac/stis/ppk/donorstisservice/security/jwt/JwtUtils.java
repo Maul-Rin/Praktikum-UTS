@@ -22,7 +22,6 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     public String generateJwtToken(User userPrincipal) {
-        // Tambahkan Role ke Claims
         return Jwts.builder()
                 .setSubject(userPrincipal.getUsername())
                 .claim("roles", userPrincipal.getAuthorities())
@@ -36,14 +35,17 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
+    // WORKAROUND KRITIS: Menggunakan cast eksplisit ke interface lama
+    // Ini memaksa compiler menggunakan method parseClaimsJws() yang lama
     public String getUserNameFromJwtToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key()).build()
+        return ((JwtParser) Jwts.parser().setSigningKey(key()))
                 .parseClaimsJws(token).getBody().getSubject();
     }
 
+    // WORKAROUND KRITIS: Menggunakan cast eksplisit ke interface lama
     public boolean validateJwtToken(String authToken) {
         try {
-            Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);
+            ((JwtParser) Jwts.parser().setSigningKey(key())).parse(authToken);
             return true;
         } catch (MalformedJwtException e) {
             logger.error("Invalid JWT token: {}", e.getMessage());
