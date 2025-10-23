@@ -24,7 +24,7 @@ public class JwtUtils {
     public String generateJwtToken(User userPrincipal) {
         return Jwts.builder()
                 .setSubject(userPrincipal.getUsername())
-                .claim("roles", userPrincipal.getAuthorities())
+                .claim("role", userPrincipal.getRole().name()) // PENTING: Simpan role
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key(), SignatureAlgorithm.HS256)
@@ -35,18 +35,29 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-    // WORKAROUND KRITIS: Menggunakan cast eksplisit ke interface lama
-    // Ini memaksa compiler menggunakan method parseClaimsJws() yang lama
     public String getUserNameFromJwtToken(String token) {
-        return ((JwtParser) Jwts.parser().setSigningKey(key()))
-                .parseClaimsJws(token).getBody().getSubject();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(key())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
+        } catch (Exception e) {
+            logger.error("Error parsing JWT: {}", e.getMessage());
+            throw e;
+        }
     }
 
-    // WORKAROUND KRITIS: Menggunakan cast eksplisit ke interface lama
     public boolean validateJwtToken(String authToken) {
         try {
-            ((JwtParser) Jwts.parser().setSigningKey(key())).parse(authToken);
+            Jwts.parserBuilder()
+                    .setSigningKey(key())
+                    .build()
+                    .parseClaimsJws(authToken);
             return true;
+        } catch (SecurityException e) {
+            logger.error("Invalid JWT signature: {}", e.getMessage());
         } catch (MalformedJwtException e) {
             logger.error("Invalid JWT token: {}", e.getMessage());
         } catch (ExpiredJwtException e) {

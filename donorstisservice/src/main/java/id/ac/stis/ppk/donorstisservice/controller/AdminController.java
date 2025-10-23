@@ -2,12 +2,13 @@ package id.ac.stis.ppk.donorstisservice.controller;
 
 import id.ac.stis.ppk.donorstisservice.model.DonorEvent;
 import id.ac.stis.ppk.donorstisservice.model.DonorRegistration;
-import id.ac.stis.ppk.donorstisservice.payload.response.MessageResponse; // WAJIB: Import MessageResponse
+import id.ac.stis.ppk.donorstisservice.payload.response.MessageResponse;
 import id.ac.stis.ppk.donorstisservice.repository.DonorRegistrationRepository;
 import id.ac.stis.ppk.donorstisservice.service.DonorService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,38 +16,38 @@ import java.util.List;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasRole('ADMIN_KSR')") // RBAC: Hanya ADMIN KSR yang bisa akses
 public class AdminController {
 
     private final DonorService donorService;
     private final DonorRegistrationRepository registrationRepository;
 
-    // PERBAIKAN: Constructor Injection untuk autowiring DonorService
     public AdminController(DonorService donorService, DonorRegistrationRepository registrationRepository) {
         this.donorService = donorService;
         this.registrationRepository = registrationRepository;
     }
 
-    // --------------------------------------------------------------------------
-    // A. Manajemen Jadwal Donor (Event)
-    // --------------------------------------------------------------------------
-
     // POST /api/admin/events: Membuat jadwal donor baru
     @PostMapping("/events")
+    @PreAuthorize("hasRole('ADMIN_KSR')")
     public ResponseEntity<?> createEvent(@Valid @RequestBody DonorEvent donorEvent) {
-        // Asumsi: Event dikirim tanpa ID, ID digenerate otomatis
+        System.out.println("===== CREATE EVENT DIPANGGIL =====");
+        System.out.println("User: " + SecurityContextHolder.getContext().getAuthentication().getName());
+        System.out.println("Authorities: " + SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+
         DonorEvent createdEvent = donorService.createEvent(donorEvent);
         return ResponseEntity.ok(createdEvent);
     }
 
-    // GET /api/admin/events: Melihat semua jadwal (termasuk yang ditutup)
+    // GET /api/admin/events: Melihat semua jadwal
     @GetMapping("/events")
+    @PreAuthorize("hasRole('ADMIN_KSR')")
     public List<DonorEvent> getAllEvents() {
         return donorService.getAllEvents();
     }
 
-    // PUT /api/admin/events/{id}/status: Mengubah status event (Misal: DITUTUP)
+    // PUT /api/admin/events/{id}/status: Mengubah status event
     @PutMapping("/events/{id}/status")
+    @PreAuthorize("hasRole('ADMIN_KSR')")
     public ResponseEntity<?> updateEventStatus(@PathVariable Long id, @RequestParam String status) {
         try {
             DonorEvent updatedEvent = donorService.updateEventStatus(id, status);
@@ -56,19 +57,16 @@ public class AdminController {
         }
     }
 
-    // --------------------------------------------------------------------------
-    // B. Manajemen Pendaftar & Verifikasi
-    // --------------------------------------------------------------------------
-
     // GET /api/admin/registrations/event/{eventId}: Melihat daftar pendaftar per event
     @GetMapping("/registrations/event/{eventId}")
+    @PreAuthorize("hasRole('ADMIN_KSR')")
     public List<DonorRegistration> getRegistrationsByEvent(@PathVariable Long eventId) {
-        // PERBAIKAN: Memanggil method findByEventId yang baru ditambahkan
         return registrationRepository.findByEventId(eventId);
     }
 
-    // PUT /api/admin/registrations/{regId}/verify: Verifikasi awal (DITERIMA/DITOLAK)
+    // PUT /api/admin/registrations/{regId}/verify: Verifikasi awal
     @PutMapping("/registrations/{regId}/verify")
+    @PreAuthorize("hasRole('ADMIN_KSR')")
     public ResponseEntity<?> verifyRegistration(@PathVariable Long regId, @RequestParam String status) {
         try {
             DonorRegistration reg = donorService.verifyRegistration(regId, status);
@@ -78,8 +76,9 @@ public class AdminController {
         }
     }
 
-    // PUT /api/admin/registrations/{regId}/finalize: Finalisasi Status Donor & Poin IPKM
+    // PUT /api/admin/registrations/{regId}/finalize: Finalisasi Status Donor
     @PutMapping("/registrations/{regId}/finalize")
+    @PreAuthorize("hasRole('ADMIN_KSR')")
     public ResponseEntity<?> finalizeRegistration(@PathVariable Long regId, @RequestParam String status) {
         try {
             DonorRegistration reg = donorService.finalizeRegistration(regId, status);
