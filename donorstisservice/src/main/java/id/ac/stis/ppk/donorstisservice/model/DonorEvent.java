@@ -25,11 +25,17 @@ public class DonorEvent {
     private String lokasi;
 
     @Column(nullable = false)
-    private Integer kuotaMaksimal; // Batas jumlah pendaftar
+    private Integer kuotaMaksimal;
 
     @Column(nullable = false)
-    private String status; // Misalnya: TERBUKA, DITUTUP, SELESAI
+    private String status;
 
-    // Field opsional untuk Admin
     private Long createdByUserId;
+
+    // TAMBAHAN: Info sertifikat untuk event ini
+    @Column(name = "sertifikat_tersedia")
+    private Boolean sertifikatTersedia = true;
+
+    @Column(name = "template_sertifikat")
+    private String templateSertifikat;
 }

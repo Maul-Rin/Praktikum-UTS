@@ -28,32 +28,22 @@ public class DonorService {
         this.userRepository = userRepository;
     }
 
-    // =======================================================
-    // METODE UNTUK ROLE_USER (Pendaftaran)
-    // =======================================================
-
     @Transactional
     public DonorRegistration registerDonor(Long eventId, Long userId, RegistrationRequest request) {
-
-        // 1. Cek User dan Event
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User tidak ditemukan."));
 
         DonorEvent event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Jadwal donor tidak ditemukan."));
 
-        // Cek apakah event masih terbuka
         if (!"TERBUKA".equalsIgnoreCase(event.getStatus())) {
             throw new IllegalStateException("Pendaftaran donor untuk event ini sudah ditutup.");
         }
 
-        // Cek apakah user sudah mendaftar
         if (registrationRepository.existsByUserIdAndEventId(userId, eventId)) {
             throw new IllegalStateException("Anda sudah terdaftar pada kegiatan donor ini.");
         }
 
-        // 2. Logika Kuota (KRITIS: Soal No. 2)
-        // Hitung pendaftar yang statusnya masih PENDING atau DITERIMA
         long currentRegistered = registrationRepository.countByEventIdAndStatusPendaftaran(eventId, "PENDING")
                 + registrationRepository.countByEventIdAndStatusPendaftaran(eventId, "DITERIMA");
 
@@ -61,7 +51,6 @@ public class DonorService {
             throw new QuotaExceededException("Kuota pendaftar donor sudah penuh (" + event.getKuotaMaksimal() + " orang).");
         }
 
-        // 3. Logika Syarat Awal (Contoh)
         if (request.getBeratBadan() < 45) {
             throw new IllegalStateException("Berat badan Anda (" + request.getBeratBadan() + " kg) kurang dari syarat minimal 45 kg.");
         }
@@ -69,7 +58,6 @@ public class DonorService {
             throw new IllegalStateException("Interval donor terakhir Anda kurang dari 3 bulan.");
         }
 
-        // 4. Buat Pendaftaran
         DonorRegistration registration = new DonorRegistration();
         registration.setUser(user);
         registration.setEvent(event);
@@ -82,27 +70,19 @@ public class DonorService {
         return registrationRepository.save(registration);
     }
 
-    // Metode untuk USER: Mendapatkan Pendaftaran Saya
     public List<DonorRegistration> getMyRegistrations(Long userId) {
         return registrationRepository.findByUserId(userId);
     }
 
-    // =======================================================
-    // METODE UNTUK ROLE_ADMIN_KSR (Manajemen)
-    // =======================================================
-
-    // Metode untuk ADMIN KSR: Membuat Event
     public DonorEvent createEvent(DonorEvent event) {
         event.setStatus("TERBUKA");
         return eventRepository.save(event);
     }
 
-    // Metode untuk ADMIN KSR: Mendapatkan semua event
     public List<DonorEvent> getAllEvents() {
         return eventRepository.findAll();
     }
 
-    // Metode untuk ADMIN KSR: Update Status Event
     @Transactional
     public DonorEvent updateEventStatus(Long eventId, String status) {
         DonorEvent event = eventRepository.findById(eventId)
@@ -112,7 +92,6 @@ public class DonorService {
         return eventRepository.save(event);
     }
 
-    // Metode untuk ADMIN KSR: Verifikasi Pendaftar Awal
     @Transactional
     public DonorRegistration verifyRegistration(Long registrationId, String newStatus) {
         DonorRegistration registration = registrationRepository.findById(registrationId)
@@ -126,7 +105,6 @@ public class DonorService {
         return registrationRepository.save(registration);
     }
 
-    // Metode untuk ADMIN KSR: Finalisasi Status
     @Transactional
     public DonorRegistration finalizeRegistration(Long registrationId, String finalStatus) {
         DonorRegistration registration = registrationRepository.findById(registrationId)
@@ -138,10 +116,8 @@ public class DonorService {
 
         registration.setStatusVerifikasiAkhir(finalStatus.toUpperCase());
 
-        // Logika IPKM: Jika LULUS_DONOR, set poinIpkmTerbit menjadi true
-        if ("LULUS_DONOR".equalsIgnoreCase(finalStatus)) {
-            registration.setPoinIpkmTerbit(true);
-        }
+        // PERUBAHAN: Tidak langsung set poin IPKM, tapi siapkan untuk pemberian sertifikat
+        // Sertifikat akan diberikan melalui endpoint terpisah oleh Admin KSR
 
         return registrationRepository.save(registration);
     }

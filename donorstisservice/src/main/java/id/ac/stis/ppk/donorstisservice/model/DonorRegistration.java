@@ -16,25 +16,34 @@ public class DonorRegistration {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // FK ke User
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "event_id", nullable = false)
-    private DonorEvent event; // FK ke DonorEvent
+    private DonorEvent event;
 
     @Column(nullable = false)
     private LocalDateTime tanggalPendaftaran = LocalDateTime.now();
 
     @Column(nullable = false)
-    private String statusPendaftaran; // PENDING, DITERIMA, DITOLAK (Verifikasi Awal)
+    private String statusPendaftaran; // PENDING, DITERIMA, DITOLAK
 
-    // Data Kuesioner Awal (Untuk Syarat Donor)
-    private Integer beratBadan; // Minimal 45 kg
-    private LocalDate donorTerakhir; // Interval donor, minimal 3 bulan
-    private String riwayatPenyakit; // JAWABAN: ADA/TIDAK
-    private Boolean apakahSedangHaid; // Khusus wanita
+    // Data Kuesioner Awal
+    private Integer beratBadan;
+    private LocalDate donorTerakhir;
+    private String riwayatPenyakit;
+    private Boolean apakahSedangHaid;
 
-    // Status Final (Setelah Hari-H Donor)
+    // Status Final
     private String statusVerifikasiAkhir; // LULUS_DONOR, BATAL_DONOR, GAGAL_SKRINING
-    private Boolean poinIpkmTerbit = false;
+
+    // GANTI: Dari poinIpkmTerbit ke sistem sertifikat
+    @Column(name = "sertifikat_diberikan")
+    private Boolean sertifikatDiberikan = false;
+
+    @Column(name = "nomor_sertifikat")
+    private String nomorSertifikat;
+
+    @Column(name = "tanggal_pemberian_sertifikat")
+    private LocalDateTime tanggalPemberianSertifikat;
 }
